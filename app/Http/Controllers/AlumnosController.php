@@ -8,9 +8,13 @@ use App\Alumno;
 use App\Personal;
 use App\MensajeAlumnoAlumno;
 use App\MensajeAlumnoPersonal;
+use App\MensajeAlumnoGrupo;
+use App\MensajePersonalAlumno;
+use App\MensajePersonalPersonal;
+use App\MensajePersonalGrupo;
+
 use App\PeriodosEscolares;
 use App\SeleccionMaterias;
-use App\MensajeAlumnoGrupo;
 
 class AlumnosController extends Controller
 {
@@ -22,6 +26,37 @@ class AlumnosController extends Controller
         return view('safd.alumno.documentos.subir');
     }
     
+    public function getDocumentPublicos(Request $request){
+        $no_de_control =Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+        $documentos = DB::table('archivo_alumno')
+            ->select('id_archivo_a','fecha_subida','dir','nombre')
+            ->where('no_control_a','=',$no_de_control)
+            ->where('publico','=',1)
+            ->get();
+        return response()->json($documentos);
+    }
+    
+    public function getDocumentTodos(Request $request){
+        $no_de_control =Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+        $documentos = DB::table('archivo_alumno')
+            ->select('id_archivo_a','fecha_subida','dir','nombre')
+            ->where('no_control_a','=',$no_de_control)
+            ->where('tarea','=',0)
+            ->orderBy('fecha_subida','DESC')
+            ->get();
+        return response()->json($documentos);
+    }
+    
+    public function getDocumentTareas(Request $request){
+        $no_de_control =Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+        $temp=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
+        $tareas = DB::table('tareas_p')
+            ->select('id_tarea','materia','dir','nombre','resumen','fecha_limite','nombre_a','grupo')
+            ->where('periodo','=',$temp)
+            ->orderBy('fecha_limite','DESC')
+            ->get();
+        return response()->json($tareas);
+    }
     
     public function documentosSet(Request $request){
         $no_de_control =Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
@@ -79,6 +114,12 @@ class AlumnosController extends Controller
     public function crearmensajes(){
             return view('safd.alumno.mensajes.crear');
     }
+    public function Mensajesrec(){
+        $ncontrol =Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+        $per=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
+        $materias=SeleccionMaterias::where('no_de_control','=',$ncontrol)->where('periodo','=',$per)->get();
+        return view('safd.alumno.mensajes.recibidos')->with('materias',$materias);
+    }
     public function getgrupos(){
         $final="";
         $temp=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
@@ -103,7 +144,12 @@ class AlumnosController extends Controller
         if(\Auth::user()->type=="1"){//Alumno
             if($Request->tipoUsuario=="alumno"){
                 $ncontrolp= Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
-                $ncontrol=Alumno::where('nombre_user','=',$Request->etiqueta)->first()->no_de_control;
+                $ncontrol=Alumno::where('nombre_user','=',$Request->etiqueta)->first();
+                if(!$ncontrol){
+                    return redirect()->route('safd.alumno.mensajes.crearmensajes');
+                }
+                $ncontrol = $ncontrol->no_de_control;
+                
                 $temp= new MensajeAlumnoAlumno();
                 $temp->no_de_control = $ncontrolp;
                 $temp->mensaje = $Request->area;
@@ -126,7 +172,13 @@ class AlumnosController extends Controller
             }
             if($Request->tipoUsuario=="personal"){
                 $ncontrol = Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
-                $rfc_e=Personal::where('nombre_user','=',$Request->etiqueta)->first()->rfc;
+                
+                $rfc_e=Personal::where('nombre_user','=',$Request->etiqueta)->first();
+                if(!$rfc_e){
+                    return redirect()->route('safd.alumno.mensajes.crearmensajes');
+                }
+                $rfc_e = $rfc_e->rfc;
+                
                 $temp= new MensajeAlumnoPersonal();
                 $temp->no_de_control = $ncontrol;
                 $temp->mensaje = $Request->area;
@@ -151,6 +203,9 @@ class AlumnosController extends Controller
                 $ncontrol = Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
                 $per=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
                 $materias=SeleccionMaterias::where('grupo','=',$Request->etiqueta)->where('no_de_control','=',$ncontrol)->where('periodo','=',$per)->distinct()->get();
+                if(!$materias){
+                    return redirect()->route('safd.alumno.mensajes.crearmensajes');
+                }
                 foreach($materias as $materia){
                     $temp=new MensajeAlumnoGrupo();
                     $temp->no_de_control = $ncontrol;
@@ -179,8 +234,204 @@ class AlumnosController extends Controller
         }
         
     }
-    
-    public function Mensajesrec(){
-        return view('');
+    public function mostrarmalumnos(){
+        $ncontrol = Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+        $mensajes=MensajeAlumnoAlumno::where('no_de_control_e','=',$ncontrol)->get();
+        $final="<table><thead>
+          <tr>
+              <th>De</th>
+              <th>Asunto</th>
+              <th>Fecha</th>
+          </tr>
+        </thead><tbody>";
+        foreach($mensajes as $mensaje){
+            $nombre=Alumno::find($mensaje->no_de_control)->nombre_user;
+            $final=$final."<tr>";
+            $final=$final."<td>$nombre</td>";
+            $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='alumno' href='#' class='detalles'>$mensaje->asunto</a></td>";
+            $final=$final."<td>$mensaje->fecha_hora</td>";
+            $final=$final."<tr>";
+        }
+        $final=$final."</tbody></table>";
+        return $final;
+    }
+    public function mostrarmmaestros(){
+        $ncontrol = Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+        $mensajes=MensajePersonalAlumno::where('no_de_control_e','=',$ncontrol)->get();
+        $final="<table><thead>
+          <tr>
+              <th>De</th>
+              <th>Asunto</th>
+              <th>Fecha</th>
+          </tr>
+        </thead><tbody>";
+        foreach($mensajes as $mensaje){
+            $nombre=Personal::find($mensaje->rfc)->nombre_user;
+            $final=$final."<tr>";
+            $final=$final."<td>$nombre</td>";
+            $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='personal' href='#' class='detalles'>$mensaje->asunto</a></td>";
+            $final=$final."<td>$mensaje->fecha_hora</td>";
+            $final=$final."<tr>";
+        }
+        $final=$final."</tbody></table>";
+        return $final;
+    }
+    public function detallesmensajes(Request $Request){
+        $final="";
+        if(\Auth::user()->type=="1"){//Alumno
+            if($Request->tabla=="alumno"){
+                $temp=MensajePersonalAlumno::where('fecha_hora','=',$Request->fecha)->first();
+                $nombre=Personal::find($temp->rfc)->nombre_user;
+                $final=$final."<div class='row'>
+                                <div class='col s12 m12'>
+                                  <div class='card blue-grey darken-1'>
+                                    <div class='card-action'>
+                                      <p>De:  $nombre  </p>
+                                      <p>Archivo Adjunto: $temp->adjunto</p>
+                                      <p>Fecha: $temp->fecha_hora</p>
+                                    </div>
+                                    <div class='card-content white-text'>
+                                      <span class='card-title'>Asunto: $temp->asunto</span>
+                                      <p>$temp->mensaje</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>";
+                              
+            }
+            if($Request->tabla=="personal"){
+                $temp=MensajePersonalAlumno::where('fecha_hora','=',$Request->fecha)->first();
+                $nombre=Personal::find($temp->rfc)->nombre_user;
+                $final=$final."<div class='row'>
+                                <div class='col s12 m12'>
+                                  <div class='card blue-grey darken-1'>
+                                    <div class='card-action'>
+                                      <p>De:  $nombre  </p>
+                                      <p>Archivo Adjunto: $temp->adjunto</p>
+                                      <p>Fecha: $temp->fecha_hora</p>
+                                    </div>
+                                    <div class='card-content white-text'>
+                                      <span class='card-title'>Asunto: $temp->asunto</span>
+                                      <p>$temp->mensaje</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>";
+            }
+            if($Request->tabla=="grupos"){
+                if(MensajeAlumnolGrupo::where('fecha_hora','=',$Request->fecha)->first()){
+                $temp=MensajeAlumnoGrupo::where('fecha_hora','=',$Request->fecha)->first();
+                $nombre=Personal::find($temp->rfc)->nombre_user;
+                $final=$final."<div class='row'>
+                                <div class='col s12 m12'>
+                                  <div class='card blue-grey darken-1'>
+                                    <div class='card-action'>
+                                      <p>De:  $nombre  </p>
+                                      <p>Archivo Adjunto: $temp->adjunto</p>
+                                      <p>Fecha: $temp->fecha_hora</p>
+                                    </div>
+                                    <div class='card-content white-text'>
+                                      <span class='card-title'>Asunto: $temp->asunto</span>
+                                      <p>$temp->mensaje</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>";
+                }
+                else{
+                    $temp=MensajePersonalGrupo::where('fecha_hora','=',$Request->fecha)->first();
+                    $nombre=Alumno::find($temp->no_de_control)->nombre_user;
+                    $final=$final."<div class='row'>
+                                    <div class='col s12 m12'>
+                                      <div class='card blue-grey darken-1'>
+                                        <div class='card-action'>
+                                          <p>De:  $nombre  </p>
+                                          <p>Archivo Adjunto: $temp->adjunto</p>
+                                          <p>Fecha: $temp->fecha_hora</p>
+                                        </div>
+                                        <div class='card-content white-text'>
+                                          <span class='card-title'>Asunto: $temp->asunto</span>
+                                          <p>$temp->mensaje</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>";
+                }
+            }
+        }
+        return $final;
+    }
+    public function mostrarmmaterias(Request $Request){
+        //$rfc = Personal::where('id_user',\Auth::user()->id)->first()->rfc;
+        $mensajes=MensajePersonalGrupo::where('materia','=',$Request->materia)->get();
+        $mensajes2=MensajeAlumnoGrupo::where('materia','=',$Request->materia)->get();
+        $final="<table><thead>
+          <tr>
+              <th>De</th>
+              <th>Asunto</th>
+              <th>Fecha</th>
+          </tr>
+        </thead><tbody>";
+        foreach($mensajes as $mensaje){
+            $nombre=Personal::find($mensaje->rfc)->nombre_user;
+            $final=$final."<tr>";
+            $final=$final."<td>$nombre</td>";
+            $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='grupos' href='#' class='detalles'>$mensaje->asunto</a></td>";
+            $final=$final."<td>$mensaje->fecha_hora</td>";
+            $final=$final."<tr>";
+        }
+        foreach($mensajes2 as $mensaje){
+            $nombre=Alumno::find($mensaje->no_de_control)->nombre_user;
+            $final=$final."<tr>";
+            $final=$final."<td>$nombre</td>";
+            $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='grupos' href='#' class='detalles'>$mensaje->asunto</a></td>";
+            $final=$final."<td>$mensaje->fecha_hora</td>";
+            $final=$final."<tr>";
+        }
+        $final=$final."</tbody></table>";
+        return $final;
+    }
+    public function mostrarenviados(){
+        if(\Auth::user()->type=="1"){//profesor
+            $ncontrol = Alumno::where('id_user',\Auth::user()->id)->first()->no_de_control;
+            $mensajes=MensajeAlumnoAlumno::where('no_de_control','=',$ncontrol)->get();
+            $mensajes2=MensajeAlumnoPersonal::where('no_de_control','=',$ncontrol)->get();
+            $mensajes3=MensajeAlumnoGrupo::where('no_de_control','=',$ncontrol)->get();
+            $final="<table><thead>
+              <tr>
+                  <th>De</th>
+                  <th>Asunto</th>
+                  <th>Fecha</th>
+              </tr>
+            </thead><tbody>";
+            foreach($mensajes as $mensaje){
+                $nombre=Alumno::find($ncontrol)->nombre_user;
+                $final=$final."<tr>";
+                $final=$final."<td>$nombre</td>";
+                $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='personal' href='#' class='detallese'>$mensaje->asunto</a></td>";
+                $final=$final."<td>$mensaje->fecha_hora</td>";
+                $final=$final."<tr>";
+            }
+            foreach($mensajes2 as $mensaje){
+                $nombre=Alumno::find($ncontrol)->nombre_user;
+                $final=$final."<tr>";
+                $final=$final."<td>$nombre</td>";
+                $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='alumno' href='#' class='detallese'>$mensaje->asunto</a></td>";
+                $final=$final."<td>$mensaje->fecha_hora</td>";
+                $final=$final."<tr>";
+            }
+            foreach($mensajes3 as $mensaje){
+                $nombre=Alumno::find($ncontrol)->nombre_user;
+                $final=$final."<tr>";
+                $final=$final."<td>$nombre</td>";
+                $final=$final."<td><a data-fecha='$mensaje->fecha_hora' data-tabla='grupos' href='#' class='detallese'>$mensaje->asunto</a></td>";
+                $final=$final."<td>$mensaje->fecha_hora</td>";
+                $final=$final."<tr>";
+            }
+            $final=$final."</tbody></table>";
+        
+        }
+        return $final;
+        
     }
 }

@@ -26,7 +26,7 @@ class ProfesoresController extends Controller
     public function enviarDocumento(){
         $docsPublico = DB::table('archivo_personal')->where('publico', '=', 0)->get();
         $docsPrivado = DB::table('archivo_personal')->where('publico', '=', 1)->get();
-        $tareasSubidas = SubirTareaProfesor::orderBy('id_tarea','ASC')->paginate(5);
+        $tareasSubidas = SubirTareaProfesor::orderBy('id_tarea','ASC')->get();
         $rfc = Personal::where('id_user',\Auth::user()->id)->first()->rfc;
         $temp=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
         $grupos = DB::table('grupos')
@@ -577,10 +577,16 @@ class ProfesoresController extends Controller
         return $final;
     }
     public function enviarMensajes(Request $Request){
+        
         if(\Auth::user()->type=="0"){//profesor
             if($Request->tipoUsuario=="alumno"){
                 $rfc = Personal::where('id_user',\Auth::user()->id)->first()->rfc;
-                $ncontrol=Alumno::where('nombre_user','=',$Request->etiqueta)->first()->no_de_control;
+                $alumno = Alumno::where('nombre_user','=',$Request->etiqueta)->first();
+                if(!$alumno){
+                    return redirect()->route('safd.profesor.mensajes.IndexMensajes');
+                }
+                $ncontrol = $alumno->no_de_control;
+                
                 $temp= new MensajePersonalAlumno();
                 $temp->rfc = $rfc;
                 $temp->mensaje = $Request->area;
@@ -603,7 +609,12 @@ class ProfesoresController extends Controller
             }
             if($Request->tipoUsuario=="personal"){
                 $rfc = Personal::where('id_user',\Auth::user()->id)->first()->rfc;
-                $rfc_e=Personal::where('nombre_user','=',$Request->etiqueta)->first()->rfc;
+                $rfc_e=Personal::where('nombre_user','=',$Request->etiqueta)->first();
+                if(!$rfc_e){
+                    return redirect()->route('safd.profesor.mensajes.IndexMensajes');
+                }
+                $rfc_e = $rfc_e->rfc;
+                
                 $temp= new MensajePersonalPersonal();
                 $temp->rfc = $rfc;
                 $temp->mensaje = $Request->area;
@@ -628,6 +639,11 @@ class ProfesoresController extends Controller
                 $rfc = Personal::where('id_user',\Auth::user()->id)->first()->rfc;
                 $per=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
                 $materias=Grupo::where('grupo','=',$Request->etiqueta)->where('rfc','=',$rfc)->where('periodo','=',$per)->distinct()->get();
+                
+                if(!$materias){
+                    return redirect()->route('safd.profesor.mensajes.IndexMensajes');
+                }
+                
                 foreach($materias as $materia){
                     $temp=new MensajePersonalGrupo();
                     $temp->rfc = $rfc;
@@ -905,5 +921,23 @@ class ProfesoresController extends Controller
             ->get();
             return view('safd.examenes.consultar.consultarExamenes')->with('grupos',$grupos)->with('materias',$materias)->with('examen',$examen);
           
+     }
+     
+     public function programarExamen(){
+        $rfc = Personal::where('id_user',\Auth::user()->id)->first()->rfc;
+            $per=PeriodosEscolares::orderBy('periodo', 'desc')->distinct()->first()->periodo;
+            $grupos = DB::table('grupos')
+            ->select('materia')
+            ->where('periodo','=',$per)
+            ->where('rfc','=',$rfc)
+            ->distinct()
+            ->get();
+            $materias = DB::table('grupos')
+            ->select('grupo')
+            ->where('periodo','=',$per)
+            ->where('rfc','=',$rfc)
+            ->distinct()
+            ->get();
+         return view('safd.examenes.programar.programarExamen')->with('grupos',$grupos)->with('materias',$materias);
      }
 }

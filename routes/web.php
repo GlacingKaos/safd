@@ -28,6 +28,8 @@ Route::group(['middleware'=>'auth'], function(){
         
         Route::post('/datosConsultaExamen', 'ProfesoresController@consultarExamenes')->name('safd.profesor.enviarDatosConsultaExamen');
         Route::get('/consultarExamen', 'ProfesoresController@datosConsultaExamenes')->name('safd.examenes.consultar.consultarExamenes');
+         Route::get('/programarExamen', 'ProfesoresController@programarExamen')->name('safd.examenes.programar.programarExamen');
+        
         
         Route::post('/catalogo/pregunta', 'ProfesoresController@catalogoPreguntaGet')->name('safd.profesor.catalogo.pregunta');
         Route::get('/catalogo/preguntas', 'ProfesoresController@catalogoPreguntas')->name('safd.profesor.catalogo.preguntas');
@@ -41,11 +43,19 @@ Route::group(['middleware'=>'auth'], function(){
         Route::get('/crearmensajes', 'AlumnosController@crearmensajes')->name('safd.alumno.mensajes.crearmensajes');
         Route::get('/getgrupos', 'AlumnosController@getgrupos')->name('safd.alumno.mensajes.getgrupos');
         Route::post('/enviarMensajes', 'AlumnosController@enviarMensajes')->name('safd.alumno.mensajes.enviarMensajes');
-        Route::post('/Mensajesrec', 'AlumnosController@Mensajesrec')->name('safd.alumno.mensajes.Mensajesrec');
+        Route::get('/Mensajesrec', 'AlumnosController@Mensajesrec')->name('safd.alumno.mensajes.Mensajesrec');
+        Route::get('/mostrarmalumnos', 'AlumnosController@mostrarmalumnos')->name('safd.alumno.mensajes.mostrarmalumnos');
+        Route::get('/mostrarmmaestros', 'AlumnosController@mostrarmmaestros')->name('safd.alumno.mensajes.mostrarmmaestros');
+        Route::post('/detallesmensajes', 'AlumnosController@detallesmensajes')->name('safd.alumno.mensajes.detallesmensajes');
+        Route::post('/mostrarmmaterias', 'AlumnosController@mostrarmmaterias')->name('safd.alumno.mensajes.mostrarmmaterias');
+        Route::get('/mostrarenviados', 'AlumnosController@mostrarenviados')->name('safd.alumno.mensajes.mostrarenviados');
         
         Route::get('/documentos/subir', 'AlumnosController@documentosSubir')->name('safd.alumno.documentos.subir');
         Route::post('/documentos/subir', 'AlumnosController@documentosSet')->name('safd.alumno.documentos.set');
         Route::get('/documentos/', 'AlumnosController@documentos')->name('safd.alumno.documentos');
+        Route::post('/documentos/publicos', 'AlumnosController@getDocumentPublicos')->name('safd.alumno.documentos.publicos');
+        Route::post('/documentos/todos', 'AlumnosController@getDocumentTodos')->name('safd.alumno.documentos.todos');
+        Route::post('/documentos/tareas', 'AlumnosController@getDocumentTareas')->name('safd.alumno.documentos.tareas');
     });
     Route::get('/logout', 'Login_Controller@logout')->name('safd.logout');
 });

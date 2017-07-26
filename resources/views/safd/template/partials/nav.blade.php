@@ -24,7 +24,7 @@
         <ul id='exam' class='dropdown-content'>
           <li><a href="{{ route('safd.profesor.catalogo.preguntas') }}">Catalogo de preguntas</a></li>
           <li><a href="{{ route('safd.examenes.consultar.consultarExamenes') }}">Consultar examenes</a></li>
-          <li><a href="#!">Programar examen</a></li>
+          <li><a href="{{ route('safd.examenes.programar.programarExamen') }}">Programar examen</a></li>
         </ul>
       @elseif(Auth::user()->type==1)
         <ul class="right hide-on-med-and-down">
@@ -40,8 +40,7 @@
         </ul>
         <ul id='mensajes' class='dropdown-content'>
           <li><a href="{{ route('safd.alumno.mensajes.crearmensajes') }}">Nuevo Mensaje</a></li>
-          <li><a href="#!">Mensajes Recibidos</a></li>
-          <li><a href="#!">Mensajes Enviados</a></li>
+          <li><a href="{{ route('safd.alumno.mensajes.Mensajesrec') }}">Mensajes</a></li>
         </ul>
         <ul id='examenes' class='dropdown-content'>
           <li><a href="#!">Exámenes Activos y Pasados</a></li>

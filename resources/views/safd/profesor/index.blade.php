@@ -1,6 +1,6 @@
 @extends('safd.template.main')
 
-@section('title','Sistema')
+@section('title','Bienvenido')
 
 @section('content')
     <div class="container">

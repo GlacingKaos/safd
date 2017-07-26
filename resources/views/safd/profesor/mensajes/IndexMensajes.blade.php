@@ -1,13 +1,13 @@
 @extends('safd.template.main')
 
-@section('title','Sistema')
+@section('title','Mensajes')
 
 @section('content')
         <div class="row">
             <div class="col m6">
               <h4 class="center">Enviar Mensaje</h4>
               <div>
-                {!! Form::open(['route' => 'safd.alumno.mensajes.enviarMensajes', 'method' => 'POST', 'files' => true]) !!}
+                {!! Form::open(['route' => 'safd.profesor.mensajes.enviarMensajes', 'method' => 'POST', 'files' => true]) !!}
                     <div class="input-field">
                       <select class="select" id="tipoUsuario" name="tipoUsuario" required>
                         <option value="" disabled selected>Selecciona una opcion</option>

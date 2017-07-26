@@ -1,6 +1,6 @@
 @extends('safd.template.main')
 
-@section('title','Sistema')
+@section('title','Documentos')
 
 @section('content')
        <div class="container">
@@ -9,7 +9,7 @@
             <div class="row">
                 <div class="input-field">
                 <select class="select" name="selectTipo" id="selectTipo">
-                  <option value="" selected>Escoge</option>
+                  <option value="" selected>Escoje</option>
                   <option value="1">Publico</option>
                   <option value="2">Privado</option>
                   <option value="3">Tarea</option>
@@ -32,9 +32,9 @@
                    <label for="fechaLimite">Fecha Limite</label>
                     <input id="fechaLimite" name="fechaLimite" type="date" class="validate">
                      <label for="horaLimite">Hora Limite</label>
-                    <input id="horas" name="horas" type="number" class="validate" style="width:40px;" min=0 max=23>
-                    <input id="minutos" name="minutos" type="number" class="validate" style="width:40px;" min=0 max=60>
-                    <input id="segundos" name="segundos" type="number" class="validate" style="width:40px;" min=0 max=60>
+                    <input id="horas" name="horas" type="number" placeholder="HH" class="validate" style="width:40px;" min=0 max=23>
+                    <input id="minutos" name="minutos" type="number" placeholder="MM" class="validate" style="width:40px;" min=0 max=60>
+                    <input id="segundos" name="segundos" type="number" placeholder="SS" class="validate" style="width:40px;" min=0 max=60>
             </div>
                 <div class="input-field">
                     <textarea class="materialize-textarea"  name="curriculum" id="curriculum"/></textarea>

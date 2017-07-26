@@ -1,6 +1,6 @@
 @extends('safd.template.main')
 
-@section('title','Alumno')
+@section('title','Subir Documento')
 
 @section('name')
     Instituto Tecnologico de Morelia
